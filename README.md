@@ -1,6 +1,9 @@
-# 独立 AWS S3 / CloudFront 工具
+# 独立 AWS / GCP 文件与 CDN 工具
 
 本机运行的 S3 文件管理与 CloudFront 缓存失效工具，中文界面。浏览器访问本地 Node.js 服务，由服务端通过 AWS SDK v3 调用 AWS；无需数据库或 AWS CLI。采用 MIT 许可证。
+
+现增加独立的 GCP 页面：Cloud Storage 文件管理与全局外部 Application Load Balancer 的 Cloud CDN 缓存失效。页面顶部点击“GCP 文件与 CDN”，或访问本地地址的 `/gcp`。AWS 与 GCP 使用独立的会话、凭证和任务。GCP 配置与权限说明见 [GCP 使用指南](docs/gcp.md)。
+Windows 启动器会尝试自动识别常见的本机 V2Ray/Xray 代理，供 Google Cloud 请求使用。手动通过终端启动时可先设置 `HTTPS_PROXY=http://127.0.0.1:10808`；端口按本机代理配置修改。
 
 ## 快速开始
 

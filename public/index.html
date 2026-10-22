@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>AWS 文件与 CDN</title><link rel="stylesheet" href="/style.css"><script defer src="/icons.js"></script><script type="module" src="/app.js"></script></head>
-<body><header><strong>AWS 文件与 CDN</strong><nav><button id="s3Tab">S3 文件</button><button id="cfTab">CloudFront</button></nav><button id="disconnect" hidden>断开连接</button></header>
+<body><header><strong>AWS 文件与 CDN</strong><nav><button id="s3Tab">S3 文件</button><button id="cfTab">CloudFront</button><a href="/gcp">GCP 文件与 CDN</a></nav><button id="disconnect" hidden>断开连接</button></header>
 <main><section id="login"><h1>连接 AWS</h1><form id="connectForm"><label>Access Key<input id="access" required autocomplete="off"></label><label>Secret Key<input id="secret" type="password" required autocomplete="off"></label><label>Session Token（可选）<input id="token" type="password" autocomplete="off"></label><button class="primary">连接</button></form></section>
 <div id="notice" role="status" aria-live="polite"></div><div id="checks"></div>
 <section id="s3" hidden><form id="locateForm" class="toolbar"><label for="resourceUrl">通过链接定位</label><input id="resourceUrl" placeholder="https://cdn.example.com/assets/file.png" required autocomplete="off"><button id="locateButton" type="submit"><i data-lucide="map-pin"></i> 定位</button></form><div id="locateResults" aria-live="polite"></div><div id="bucketView"><h1>存储桶</h1><input id="bucketSearch" placeholder="搜索 Bucket 名称"><div id="buckets"></div></div>

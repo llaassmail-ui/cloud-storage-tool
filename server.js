@@ -5,13 +5,16 @@ import { AWS, errorInfo, matchDistributions, invalidationPaths } from './aws.js'
 import { newJob, publicJob, runBatch, validateSelection, validateTargets } from './jobs.js';
 import { pathToFileURL } from 'node:url';
 import { locateURL } from './locator.js';
+import { createGCPRoutes } from './gcp-routes.js';
 
-export function createServer(factory = credentials => new AWS(credentials)) {
+export function createServer(factory = credentials => new AWS(credentials), gcpFactory, gcpJobOptions) {
   const sessions = new Map();
+  const gcp = createGCPRoutes(gcpFactory, gcpJobOptions);
   const json = (res, status, value) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(value)); };
   async function body(req) {
-    let text = ''; for await (const chunk of req) { text += chunk; if (Buffer.byteLength(text) > 2 * 1024 ** 2) throw new Error('请求内容过大'); }
-    return JSON.parse(text || '{}');
+    const chunks = []; let bytes = 0;
+    for await (const chunk of req) { bytes += chunk.length; if (bytes > 2 * 1024 ** 2) throw new Error('请求内容过大'); chunks.push(chunk); }
+    return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
   }
   const server = http.createServer(async (req, res) => {
     res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -21,11 +24,13 @@ export function createServer(factory = credentials => new AWS(credentials)) {
     const url = new URL(req.url, `http://${expected}`); const route = url.pathname;
     try {
       const staticFiles = { '/': ['public/index.html', 'text/html'], '/app.js': ['public/app.js', 'text/javascript'], '/task-groups.js': ['task-groups.js', 'text/javascript'], '/style.css': ['public/style.css', 'text/css'], '/icons.js': ['node_modules/lucide/dist/umd/lucide.js', 'text/javascript'] };
+      Object.assign(staticFiles, { '/gcp': ['public/gcp.html', 'text/html'], '/gcp-app.js': ['public/gcp-app.js', 'text/javascript'], '/gcp-style.css': ['public/gcp-style.css', 'text/css'] });
       if (req.method === 'GET' && staticFiles[route]) {
         const [file, type] = staticFiles[route]; const data = await readFile(new URL(file, import.meta.url));
         res.writeHead(200, { 'Content-Type': `${type}; charset=utf-8` }); return res.end(data);
       }
       if (req.method !== 'GET' && req.headers.origin !== `http://${expected}`) return json(res, 403, { error: { message: '缺少同源 Origin' } });
+      if (route.startsWith('/api/gcp/')) return await gcp.route(req, res, url, { body, json, port: server.address().port });
       const cookieName = `aws_session_${server.address().port}`;
       const sid = new RegExp(`(?:^|; )${cookieName}=([^;]+)`).exec(req.headers.cookie || '')?.[1];
       if (route === '/api/connect' && req.method === 'POST') {
@@ -93,7 +98,7 @@ export function createServer(factory = credentials => new AWS(credentials)) {
       return json(res, 404, { error: { message: '接口不存在' } });
     } catch (e) { if (!res.headersSent) json(res, 400, { error: errorInfo(e, route) }); else res.destroy(); }
   });
-  server.on('close', () => { sessions.forEach(s => { s.jobs.forEach(j => j.controller.abort()); s.aws.close(); }); sessions.clear(); });
+  server.on('close', () => { sessions.forEach(s => { s.jobs.forEach(j => j.controller.abort()); s.aws.close(); }); sessions.clear(); void gcp.close(); });
   return server;
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

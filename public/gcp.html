@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>GCP 文件与 CDN</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/gcp-style.css">
+  <script defer src="/icons.js"></script>
+  <script defer src="/gcp-app.js"></script>
+</head>
+<body class="gcp">
+  <a class="skip-link" href="#main">跳转到内容</a>
+  <header class="gcp-header">
+    <strong><i data-lucide="cloud" aria-hidden="true"></i> GCP 文件与 CDN</strong>
+    <nav aria-label="云平台"><a href="/">AWS</a><a href="/gcp" aria-current="page">GCP</a></nav>
+    <span id="connectionState" class="muted">正在恢复会话</span>
+    <button id="disconnect" hidden><i data-lucide="log-out" aria-hidden="true"></i> 断开连接</button>
+  </header>
+  <main id="main" tabindex="-1">
+    <div id="notice" role="status" aria-live="polite"></div>
+    <section id="login" aria-labelledby="loginTitle" hidden>
+      <h1 id="loginTitle">连接 Google Cloud</h1>
+      <form id="connectForm">
+        <fieldset class="auth-options"><legend>身份验证</legend>
+          <label><input type="radio" name="authMode" value="adc" checked> 应用默认凭据（ADC）</label>
+          <label><input type="radio" name="authMode" value="serviceAccount"> 服务账号 JSON 文件</label>
+        </fieldset>
+        <p id="adcHint" class="muted">使用本机服务已配置的 Google Cloud 身份。</p>
+        <label id="credentialField" hidden>服务账号密钥文件<input id="credentialFile" type="file" accept=".json,application/json" autocomplete="off"></label>
+        <button id="connectButton" class="primary"><i data-lucide="plug" aria-hidden="true"></i> 连接</button>
+      </form>
+    </section>
+    <section id="workspace" hidden>
+      <h1 class="page-title">Google Cloud 资源</h1>
+      <form id="projectForm" class="project-bar">
+        <label>可用项目<select id="projectSelect"><option value="">手动输入项目 ID</option></select></label>
+        <label>项目 ID<input id="projectId" required autocomplete="off" placeholder="my-project-id"></label>
+        <button id="projectButton" type="submit">切换项目</button>
+      </form>
+      <p id="projectError" class="warning" role="status" hidden></p>
+      <div id="checks" aria-live="polite"></div>
+      <div class="gcp-tabs" role="tablist" aria-label="资源类型">
+        <button id="filesTab" type="button" role="tab" aria-selected="true" aria-controls="storagePanel"><i data-lucide="folder" aria-hidden="true"></i> 存储文件</button>
+        <button id="cdnTab" type="button" role="tab" aria-selected="false" aria-controls="cdnPanel" tabindex="-1"><i data-lucide="globe" aria-hidden="true"></i> CDN 缓存</button>
+      </div>
+      <section id="storagePanel" role="tabpanel" aria-labelledby="filesTab">
+        <div id="bucketView">
+          <div class="section-heading"><h2>存储桶</h2><button id="refreshBuckets" type="button" title="刷新存储桶" aria-label="刷新存储桶"><i data-lucide="refresh-cw" aria-hidden="true"></i></button></div>
+          <label for="bucketSearch" class="sr-only">筛选存储桶</label><input id="bucketSearch" type="search" placeholder="筛选存储桶名称" autocomplete="off">
+          <p id="bucketStatus" class="muted" role="status">请先选择项目。</p><div id="buckets"></div>
+        </div>
+        <div id="fileView" hidden>
+          <div class="toolbar"><button id="back" title="返回存储桶" aria-label="返回存储桶"><i data-lucide="arrow-left" aria-hidden="true"></i></button><nav id="crumbs" aria-label="对象目录"></nav><button id="refresh" title="刷新目录" aria-label="刷新目录"><i data-lucide="refresh-cw" aria-hidden="true"></i></button></div>
+          <div class="toolbar"><span id="selection">0 项已选</span><button id="newFolder"><i data-lucide="folder-plus" aria-hidden="true"></i> 新建文件夹</button><button id="copy" disabled><i data-lucide="copy" aria-hidden="true"></i> 复制</button><button id="move" disabled><i data-lucide="folder-input" aria-hidden="true"></i> 移动</button><button id="delete" class="danger" disabled><i data-lucide="trash-2" aria-hidden="true"></i> 删除</button></div>
+          <div class="tableWrap"><table><caption class="sr-only">当前目录中的文件和文件夹</caption><thead><tr><th><input id="selectAll" type="checkbox" aria-label="选择所有已加载对象"></th><th>名称</th><th>大小</th><th>修改时间</th></tr></thead><tbody id="objects"></tbody></table></div>
+          <p id="objectStatus" class="muted" role="status"></p><button id="more" hidden>加载更多</button>
+          <div id="drop"><i data-lucide="upload" aria-hidden="true"></i><strong>拖放文件或文件夹到此处</strong><div class="upload-buttons"><button id="chooseFiles">选择文件</button><button id="chooseFolder">选择文件夹</button></div><input id="files" type="file" multiple hidden><input id="folder" type="file" webkitdirectory multiple hidden></div>
+        </div>
+      </section>
+      <section id="cdnPanel" role="tabpanel" aria-labelledby="cdnTab" hidden>
+        <h2>CDN 缓存失效</h2>
+        <form id="searchForm" class="toolbar"><label for="domain">资源地址</label><input id="domain" required placeholder="https://cdn.example.com/assets/app.js 或域名/路径" autocomplete="off"><button id="searchMaps"><i data-lucide="search" aria-hidden="true"></i> 查找 URL Map</button></form>
+        <p id="mapStatus" class="muted" role="status"></p>
+        <fieldset id="mapChoices" hidden><legend>选择全局 URL Map</legend><div id="maps"></div></fieldset>
+        <form id="invalidateForm">
+          <label>目标主机<input id="cdnHost" readonly placeholder="查找后显示"></label>
+          <label>失效路径（每行一条）<textarea id="paths" rows="6" required placeholder="/index.html&#10;/assets/*" spellcheck="false" aria-describedby="pathError"></textarea></label>
+          <p id="pathError" class="warning" role="status"></p>
+          <button id="invalidateButton" class="primary" disabled><i data-lucide="send" aria-hidden="true"></i> 提交缓存失效</button>
+        </form>
+      </section>
+      <section id="activity" aria-labelledby="activityTitle">
+        <div class="section-heading"><h2 id="activityTitle">任务</h2><button id="refreshJobs" title="刷新任务" aria-label="刷新任务"><i data-lucide="refresh-cw" aria-hidden="true"></i></button></div>
+        <p id="jobStatus" class="muted" role="status">暂无任务。</p><div id="tasks"></div>
+      </section>
+    </section>
+  </main>
+  <dialog id="modal" aria-labelledby="modalTitle" aria-describedby="modalDescription">
+    <form id="modalForm">
+      <h2 id="modalTitle"></h2><p id="modalDescription"></p>
+      <div id="folderFields" hidden><label>文件夹名称<input id="folderName" autocomplete="off" placeholder="images"></label></div>
+      <div id="targetFields" hidden><label>目标存储桶<input id="targetBucket" list="bucketOptions" autocomplete="off"></label><datalist id="bucketOptions"></datalist><label>目标目录<input id="targetPrefix" autocomplete="off" placeholder="例如 releases/"></label><p id="targetPreview" class="target-preview"></p></div>
+      <fieldset id="permissionFields" hidden><legend>目标访问权限（必选）</legend><label><input type="radio" name="permission" value="inherit"> 继承存储桶权限</label><label><input type="radio" name="permission" value="public"> 公开读取</label><p id="publicWarning" class="warning" hidden>文件将允许公开读取。存储桶的统一访问控制或禁止公开访问策略可能拒绝此操作。</p></fieldset>
+      <label id="overwriteLabel" hidden><input id="overwrite" type="checkbox"> 覆盖同名对象（未选中时跳过）</label>
+      <label id="wildcardLabel" class="warning" hidden><input id="wildcardConfirm" type="checkbox"> 我确认失效 /*，清除该主机的全部路径缓存</label>
+      <p id="modalError" class="warning" role="alert"></p><div class="toolbar dialog-actions"><button type="button" id="cancelModal">取消</button><button id="confirmModal" class="primary" type="submit">确认执行</button></div>
+    </form>
+  </dialog>
+  <dialog id="failureDialog" aria-labelledby="failureTitle">
+    <form method="dialog"><div class="dialogHeader"><h2 id="failureTitle">失败详情</h2><button title="关闭失败详情" aria-label="关闭失败详情"><i data-lucide="x" aria-hidden="true"></i></button></div></form>
+    <p id="failureSummary"></p><div class="failureTableWrap"><table><thead><tr><th>对象 / 路径</th><th>类别</th><th>操作 ID</th><th>错误详情</th></tr></thead><tbody id="failureItems"></tbody></table></div>
+  </dialog>
+  <input id="retryFiles" type="file" multiple hidden><input id="retryFolder" type="file" webkitdirectory multiple hidden>
+</body>
+</html>

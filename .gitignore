@@ -11,3 +11,5 @@ coverage/
 Thumbs.db
 .codex-tmp/
 .launcher-port
+*service-account*.json
+application_default_credentials.json
