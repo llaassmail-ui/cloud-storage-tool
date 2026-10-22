@@ -75,7 +75,7 @@ try {
     $current = Get-OwnedProcess $portNumber
     if ($Restart -and $current -and !$Yes) {
         Add-Type -AssemblyName System.Windows.Forms
-        $answer = [Windows.Forms.MessageBox]::Show("重启会中断正在执行的上传、复制和移动，清空连接及任务记录，需要重新输入密钥。已提交的 CDN 失效不会撤销。`n`n请确认任务已结束。现在重启？", '重启 AWS 工具', 'YesNo', 'Warning', 'Button2')
+        $answer = [Windows.Forms.MessageBox]::Show("重启会中断正在执行的上传、复制和移动，清空连接及任务记录，需要重新输入密钥。已提交的 CDN 失效不会撤销。`n`n请确认任务已结束。现在重启？", '重启云存储与 CDN 工具', 'YesNo', 'Warning', 'Button2')
         if ($answer -ne 'Yes') { return }
     }
     if (!$current -or $Restart) {

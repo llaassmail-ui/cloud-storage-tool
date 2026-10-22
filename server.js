@@ -104,5 +104,5 @@ export function createServer(factory = credentials => new AWS(credentials), gcpF
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.env.PORT || 8787);
   const server = createServer(); server.on('error', e => { console.error(e.code === 'EADDRINUSE' ? `端口 ${port} 已占用，请设置 PORT 后重启。` : e.message); process.exitCode = 1; });
-  server.listen(port, '127.0.0.1', () => console.log(`AWS Storage Tool: http://127.0.0.1:${server.address().port}`));
+  server.listen(port, '127.0.0.1', () => console.log(`Cloud Storage Tool: http://127.0.0.1:${server.address().port}`));
 }

@@ -11,7 +11,7 @@ async function api(path, method = 'GET', data) {
   const response = await fetch(`/api/${path}`, { method, headers: data === undefined ? {} : { 'Content-Type': 'application/json' }, body: data === undefined ? undefined : JSON.stringify(data) });
   const result = await response.json();
   if (!response.ok) {
-    if (response.status === 404 && result.error?.message === '接口不存在') throw new Error(`本地接口不存在：${method} /api/${path}。请重启 AWS 工具本地服务后刷新页面；这不是 AWS 权限错误。`);
+    if (response.status === 404 && result.error?.message === '接口不存在') throw new Error(`本地接口不存在：${method} /api/${path}。请重启云存储与 CDN 工具本地服务后刷新页面；这不是 AWS 权限错误。`);
     throw new Error(formatError(result.error || { message: response.statusText }));
   }
   return result;
